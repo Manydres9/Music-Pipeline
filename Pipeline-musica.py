@@ -1,8 +1,9 @@
 import requests
 import pandas as pd
 from datetime import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
+
 
 # --- CONFIGURACIÓN ---
 # ¡Reemplaza esto con tus propios datos!
@@ -92,6 +93,26 @@ engine = create_engine(url_conexion)
 print("Conectando...")
 
 print("Cargando datos...")
+
+print("Inicio de proceso --IDEMPOTENCIA--")
+
+#Definir fecha de hoy
+fecha_hoy = datetime.now().date()
+print(f"Fecha de proceso {fecha_hoy}")
+
+Query_delete_time = text(f"""
+    DELETE FROM TOP_ARTISTS
+    WHERE extraction_date::DATE = '{fecha_hoy}'
+""")
+
+with engine.connect() as connection:
+    print("Buscando y borrando datos manipulados HOY")
+    connection.execute(Query_delete_time)
+    connection.commit()
+    print("Limpieza completada")
+
+
+print("Fin de proceso de limpieza")
 
 df_clean.to_sql(
     name='top_artists', 
